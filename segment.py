@@ -4,23 +4,11 @@ __author__ = 'tomerlevinboim'
 import SegUtil
 import MonotoneFSTUtil
 import numpy as np
+import sys
 
 
 class Record(object):
     pass
-
-
-def readlines(filename, rstrip=False):
-    lines = []
-    with open(filename, 'rb') as f:
-        for (i, line) in enumerate(f):
-            if rstrip:
-                line = line.rstrip()
-            lines.append(line)
-
-    return lines
-
-############################################
 
 
 def Model(Pseg=None):
@@ -98,6 +86,20 @@ def EM_train(data, params, model):
     return model
 
 
+##### Input #####
+
+
+def readlines(filename, rstrip=False):
+    lines = []
+    with open(filename, 'rb') as f:
+        for (i, line) in enumerate(f):
+            if rstrip:
+                line = line.rstrip()
+            lines.append(line)
+
+    return lines
+
+
 def load_data(filename, remove_whitespace=False, chop=-1):
     data = Record()
     if filename == 'test':
@@ -120,22 +122,30 @@ def load_data(filename, remove_whitespace=False, chop=-1):
     return data
 
 
-def init_params(MAX_ITER=4, MAX_SEG_LENGTH=5, beta=1.6):
+def init_params(MAX_ITER=4, MAX_SEG_LENGTH=5, beta=1.6, betamode=1):
     params = Record()
     params.MAX_ITER = MAX_ITER
     params.MAX_SEG_LENGTH = MAX_SEG_LENGTH
     # set beta = 1 for debug
     params.beta = beta  # Liang et al. (2006): For English, we used beta = 1.6; Chinese, beta = 2.5.
-    params.betas = [1.0] + [ ((i*1.0) ** -params.beta) for i in xrange(1, params.MAX_SEG_LENGTH + 1) ]
+    #params.betas = [1.0] + [ -((z*1.0) ** params.beta) for z in xrange(1, params.MAX_SEG_LENGTH + 1) ]
+
+    if betamode == 1:
+        R = np.array(range(0, params.MAX_SEG_LENGTH + 1))
+    else:
+        R = np.abs(1-np.array(range(0, params.MAX_SEG_LENGTH + 1)))
+    params.betas = np.exp(-np.power(R, beta))
+
     return params
 
 
 if __name__ == '__main__':
-    filename = 'data/es-en.50.en'
+    filename = 'data/train.1K.en'
+    beta = float(sys.argv[1])
     #filename = 'test'
 
-    params = init_params(MAX_ITER=10, MAX_SEG_LENGTH=5, beta=0)
-    data = load_data(filename, remove_whitespace=True, chop=20)
+    params = init_params(MAX_ITER=10, MAX_SEG_LENGTH=10, beta=beta, betamode=1)
+    data = load_data(filename, remove_whitespace=True, chop=-1)
 
     model0 = init_model(data, params)
     model = EM_train(data, params, model0)

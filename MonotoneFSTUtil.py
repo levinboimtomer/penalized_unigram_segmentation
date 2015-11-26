@@ -1,54 +1,25 @@
 import numpy as np
-from SegUtil import segments
-from collections import defaultdict
-from scipy.misc import logsumexp
+import pyximport
+pyximport.install(setup_args={'include_dirs':[np.get_include()]})
+from cy_MonotoneFSTUtil import *
 
 # Computing forward backward and Viterbi for monotone FSTs
 # which are FSTs whose state transition matrix is upper trianguar
 # compute the forward-backward and vweight along the lattice
 
+
 # makes an upper triangular matrix P[i, j]=probability of moving from state i to state j.
-def newTransitionMatrix(model, params, N, line):
-    P = np.zeros([N, N])
-    for i in xrange(N - 1):
-        P[i, i + 1] = 1     # assume P[i,i+1] = 1 (required so that we skip over ' ' with probability 1)
-    for (i, j, seg) in segments(line, params.MAX_SEG_LENGTH):
-        N_seg = len(seg)
-        P[i, j] = model.Pseg[seg] * params.betas[N_seg]
-
-    return P
-
-
-def _forward(N, logP):
-    log_alpha = -np.inf*np.ones(N, )
-    log_alpha[0] = 0  # log(1)
-    for n in xrange(1, N):
-        logPn = logP[:, n]               # TODO: Consider changing this to account for params.MAX_SEG_LENGTH
-        log_alpha[n] = logsumexp(log_alpha + logPn)
-
-    return log_alpha
-
-
-def _backward(N, logP):
-    alpha = _forward(N, np.fliplr(np.flipud(logP.T)))           # transpose and then left-right and up-down flip P
-    beta = alpha[::-1]                                          # reverse
-    return beta
-
 
 def forward_backward(model, params, line):
     N = len(line) + 1
-    logP = np.log(newTransitionMatrix(model, params, N, line))  # compute the (log-)transition matrix
+    logP = np.log(newTransitionMatrix(model, params, N, line), dtype=np.float32)  # compute the (log-)transition matrix
 
-    log_alpha = _forward(N, logP)                               # compute forward weights
-    log_beta = _backward(N, logP)                               # compute backward weights
-    assert np.isclose(log_alpha[-1], log_beta[0])
-    Z = log_alpha[-1]                                           # Z = prob(line)
+    log_alpha = cy_forward(params, N, logP)                               # compute forward weights
+    log_beta = cy_backward(params, N, logP)                               # compute backward weights
+    assert np.isclose(log_alpha[-1], log_beta[0]), "alpha=%f, beta=%f" % (log_alpha[-1], log_beta[0])
+    Z = log_alpha[-1]                                                     # Z = prob(line)
 
-    C = defaultdict(lambda: 0)                                  # C[seg] stores expected counts for segment seg
-    for (i, j, seg) in segments(line, params.MAX_SEG_LENGTH):
-        edge_posterior = np.exp(log_alpha[i] + logP[i, j] + log_beta[j] - Z)  # alpha[i]*P_ij*beta[j]/Z
-        # assert edge_posterior >= 0 and edge_posterior <= 1
-        C[seg] += edge_posterior
+    C = collect_counts(line, params, logP, log_alpha, log_beta, Z)
 
     return Z, C
 
