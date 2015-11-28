@@ -1,10 +1,12 @@
 __author__ = 'tomerlevinboim'
 from collections import defaultdict
 
-import SegUtil
-import MonotoneFSTUtil
+import sys
 import numpy as np
+
+import SegUtil
 from Util import *
+import MonotoneFSTUtil
 
 
 class Record(object):
@@ -34,8 +36,8 @@ def init_params(MAX_ITER=4, MAX_SEG_LENGTH=5, beta=1.6, beta_offset=0):
 
 class Segmenter:
 
-    def __init__(self, beta, MAX_SEG_LENGTH=10, EM_ITER=10, beta_offset=0):
-        self.params = init_params(MAX_ITER=EM_ITER, MAX_SEG_LENGTH=MAX_SEG_LENGTH, beta=beta, beta_offset=beta_offset)
+    def __init__(self, opts):
+        self.params = init_params(MAX_ITER=opts.ITERATIONS, MAX_SEG_LENGTH=opts.MAX_SEG_LENGTH, beta=opts.beta, beta_offset=opts.offset)
         self.data = Record()
         self.filename = Record()
 
@@ -56,13 +58,11 @@ class Segmenter:
             # beta = array([1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000]) (this makes sense because normalization makes the lattice stochastic)
         else:
             original_lines = readlines(filename_train, rstrip=True)
-            if filename_dev is not None:
+            if filename_dev is not None and len(filename_dev) > 0:
                 self.data.lines_dev = readlines(filename_dev, rstrip=True)
                 original_lines += self.data.lines_dev
 
-            original_lines = process_lines(original_lines, remove_whitespace, chop)
-
-            self.data.lines = original_lines
+            self.data.lines = process_lines(original_lines, remove_whitespace, chop)
 
     def init_model(self):
         if self.params is None:
@@ -77,16 +77,16 @@ class Segmenter:
         for iter in xrange(self.params.MAX_ITER):
             # E-step
             LL, exp_counts = self.E_step(model)
-            print "E-step", iter, " LL =", LL
+            print >> sys.stderr, "E-step", iter, " LL =", LL
 
             # M-step
             model = self.M_step(exp_counts)
-            print "M-step", iter
+            print >> sys.stderr, "M-step", iter
 
             if model.LL > LL:
-                print "Warning: log likelihood decreased!"
+                print >> sys.stderr, "Warning: log likelihood decreased!"
             if np.isclose(model.LL, LL, 1e-10):
-                print "Converged at iteration", iter
+                print >> sys.stderr, "Converged at iteration", iter
                 break
             model.LL = LL
 
@@ -99,7 +99,7 @@ class Segmenter:
         total = sum([ec.Pseg[seg] for seg in ec.Pseg])
 
         if total <= 0 or np.isnan(total):
-            print '## Warning: total is', total
+            print >> sys.stderr, '## Warning: total is', total
 
         Pseg = {seg: (ec.Pseg[seg]/total) for seg in ec.Pseg}
         return Model(Pseg)
@@ -116,8 +116,6 @@ class Segmenter:
 
             for seg in counts_i:
                 Pseg[seg] += counts_i[seg]      # accumulate the expected counts
-            #print '  abc = ', Pseg['abc']
-            #print '  lola = ', Pseg['lola']
 
         ec = Model(Pseg)
         return LL, ec
