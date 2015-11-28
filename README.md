@@ -1,3 +1,6 @@
+The implementation is a slight variation on the penalized segmentation model proposed by Liang et al. (2009) in their paper "Online EM for Unsupervised Models". 
+In particular, on top of the new hyperparameter c (explained below), it also treats spaces as known word boundaries.
+
 ## Penalized Unigram Segmentation
 The unigram segmentation model of a sentence s is defined as:
 
@@ -16,8 +19,6 @@ where:
 * c is an offset parameter. Set c higher than 0 if short segments are unlikely.
 * beta is a coefficient governing how unlikely are long segments.
 
-
-This is a slight variation on the model proposed by Liang et al. (2009) in their paper "Online EM for Unsupervised Models".
 
 ### Testing and running the code
 
