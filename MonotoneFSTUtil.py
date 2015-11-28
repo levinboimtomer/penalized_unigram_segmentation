@@ -25,8 +25,7 @@ def forward_backward(model, params, line):
 
 # _viterbi_forward() is similar to the _forward() function,
 # however, instead of computing the total probability of getting to state i from all previous states
-# we only maintain the probability of the best reaching path as well as index pointers for backtracking
-# private
+# we only maintain the probability of the best reaching path (to a state) as well as index pointers for backtracking
 def _viterbi_forward(N, logP):
     back = np.zeros(N, dtype=int)                               # backtrack indices
     log_v = -np.inf*np.ones(N)                                  # score of best path to state.
@@ -61,14 +60,13 @@ def viterbi(model, params, line, line_no=None):
     return J, log_v[-1]
 
 
-
 ## some interactive debugging code
 # P = normalize(P, norm='l1', axis=1, copy=False)  # TL: uncomment for debugging
 # np.set_printoptions(formatter={'float': lambda x: '   -  ' if x == 0 else '%2.4f' % x})
 # print np.matrix(P)
 
 
-## the first _forward() function, before working in log-probability
+## the first _forward() function, before converting to log-probability
 # def _forward():
 #     alpha = np.zeros(N, )
 #     alpha[0] = 1
