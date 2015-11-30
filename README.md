@@ -1,5 +1,5 @@
-The implementation is a slight variation on the penalized segmentation model proposed by Liang et al. (2009) in their paper "Online EM for Unsupervised Models". 
-In particular, on top of the new hyperparameter c (explained below), it also treats spaces as known word boundaries.
+This implementation is a slight variation on the penalized segmentation model proposed by Liang et al. (2009) in their paper "Online EM for Unsupervised Models". 
+It introduces a new hyperparameter c (explained below) and also treats spaces as fixed word boundaries.
 
 ## Penalized Unigram Segmentation
 The unigram segmentation model of a sentence s is defined as:
