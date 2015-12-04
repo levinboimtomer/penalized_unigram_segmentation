@@ -29,7 +29,10 @@ def init_params(MAX_ITER=4, MAX_SEG_LENGTH=5, beta=1.6, beta_offset=0):
     #params.betas = [1.0] + [ -((z*1.0) ** params.beta) for z in xrange(1, params.MAX_SEG_LENGTH + 1) ]
 
     R = np.abs(beta_offset-np.array(range(0, params.MAX_SEG_LENGTH + 1)))
+    R[0] = 0
     params.betas = np.exp(-np.power(R, beta))
+    params.betas /= params.betas.sum()
+
 
     return params
 
