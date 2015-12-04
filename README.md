@@ -1,10 +1,10 @@
-The implementation is a slight variation on the penalized segmentation model proposed by Liang et al. (2009) in their paper "Online EM for Unsupervised Models". 
-In particular, on top of the new hyperparameter c (explained below), it also treats spaces as known word boundaries.
+This implementation is a slight variation on the penalized segmentation model proposed by Liang et al. (2009) in their paper "Online EM for Unsupervised Models". 
+It introduces a new hyperparameter c (explained below) and also treats spaces as fixed word boundaries.
 
 ## Penalized Unigram Segmentation
 The unigram segmentation model of a sentence s is defined as:
 
-P(s) = \prod P[w_k]
+P(s) = \prod_k P[w_k]
 
 where w_k denotes the k'th segment of s.
 This model is extermely simple but is known to have a degenerate solution -- one that does not segment the sentence s at all.
@@ -12,7 +12,7 @@ This model is extermely simple but is known to have a degenerate solution -- one
 This project is a (Python) implementation of a **penalized** unigram segmentation which avoids the degenerate solution.
 According to this mode:
 
-  P(s) \propto \prod P[w_k] * e^( abs(|w_k| - c))^\beta )
+  P(s) \propto \prod_k P[w_k] * e^( abs(|w_k| - c))^\beta )
 
 where:
 * |w_k| is the length of the k'th segment w_k
