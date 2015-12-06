@@ -4,7 +4,8 @@
 import numpy as np
 cimport numpy as np
 
-# return all ngrams in line of length up to K
+# return all ngrams of length up to K within line.
+# Note: an ngram cannot contain space.
 def segments(object line, size_t K):
     cdef size_t i, j, N, M
     N = len(line)+1

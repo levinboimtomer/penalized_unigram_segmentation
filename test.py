@@ -10,7 +10,7 @@ def parseCommandLine():
     parser.add_argument("-b", "--beta", dest="beta", default=1.3, type=float, help="Higher beta makes longer sequences less likely")
     parser.add_argument("-c", "--offset", dest="offset", default=0, type=int, help="Set c higher than 0 if short segments are unlikely")
     parser.add_argument("-S", "--maxseglength", dest="MAX_SEG_LENGTH", default=10, type=int, help="maximum segment length")
-    parser.add_argument("-i", "--iterations", dest="ITERATIONS", default=6&, type=int, help="EM iterations")
+    parser.add_argument("-i", "--iterations", dest="ITERATIONS", default=6, type=int, help="EM iterations")
 
     opts = parser.parse_args()
     return opts, parser
