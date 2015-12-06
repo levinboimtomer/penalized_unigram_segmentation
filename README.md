@@ -1,5 +1,6 @@
-This implementation is a slight variation on the penalized segmentation model proposed by Liang et al. (2009) in their paper "Online EM for Unsupervised Models". 
-It introduces a new offset hyperparameter c (explained below) and also treats spaces as fixed word boundaries.
+A word segmentation model solves the problem of splitting tokens such as "thisisacompound" to their components ["this", "is", "a", "compound"].
+This project implements an unsupervised (correct segmentations are not provided to the model) penalized unigram segmentation model.
+The implementation is a slight variation on the model proposed by Liang et al. (2009) in their paper "Online EM for Unsupervised Models" in that it further introduces a new offset hyperparameter c (explained below) and also treats spaces as fixed word boundaries.
 
 ## Penalized Unigram Segmentation
 The unigram segmentation model of a sentence s is defined as:
