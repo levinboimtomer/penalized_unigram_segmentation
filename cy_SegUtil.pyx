@@ -6,8 +6,10 @@ cimport numpy as np
 
 # return all ngrams of length up to K within line.
 # Note: an ngram cannot contain space.
-def segments(object line, size_t K):
+def segments(str line, size_t K):
     cdef size_t i, j, N, M
+    cdef str seg
+
     N = len(line)+1
     for i in xrange(N):
         M = min(N, i+1+K)
@@ -15,4 +17,4 @@ def segments(object line, size_t K):
             seg = line[i:j]
             if ' ' in seg:
                 break
-            yield i, j, line[i:j]
+            yield i, j, seg

@@ -1,8 +1,13 @@
-__author__ = 'tomerlevinboim'
+import numpy as np
+import pyximport
+pyximport.install(setup_args={'include_dirs':[np.get_include()]})
+from cy_Segmenter import *
+
 from collections import defaultdict
 
 import sys
 import numpy as np
+import multiprocessing as mp
 
 import SegUtil
 from Util import *
@@ -33,8 +38,16 @@ def init_params(MAX_ITER=4, MAX_SEG_LENGTH=5, beta=1.6, beta_offset=0):
     params.betas = np.exp(-np.power(R, beta))
     params.betas /= params.betas.sum()
 
-
     return params
+
+
+shared_model = None
+shared_params = None
+shared_lines = None
+#import cProfile
+def parallel_forward_backwards(N_n):
+    #cProfile.runctx('cy_parallel_fb(N_n, shared_lines, shared_model, shared_params)', globals(), locals())
+    return cy_parallel_fb(N_n, shared_lines, shared_model, shared_params)
 
 
 class Segmenter:
@@ -43,7 +56,6 @@ class Segmenter:
         self.params = init_params(MAX_ITER=opts.ITERATIONS, MAX_SEG_LENGTH=opts.MAX_SEG_LENGTH, beta=opts.beta, beta_offset=opts.offset)
         self.data = Record()
         self.filename = Record()
-
 
     def loadData(self, filename_train, filename_dev=None, remove_whitespace=False, chop=-1):
         self.filename.train = filename_train
@@ -108,17 +120,36 @@ class Segmenter:
         return Model(Pseg)
 
 
-    def E_step(self, model):
+    def E_step(self, model, N_processes=4):
         # initialize the expected counts
         Pseg = defaultdict(lambda: 0)
         LL = 0
 
-        for i, line in enumerate(self.data.lines):       # go over each sentence and collect expected counts
-            logprob_i, counts_i = MonotoneFSTUtil.forward_backward(model, self.params, line)
-            LL += logprob_i
+        if N_processes > 1:
+            global shared_model, shared_params, shared_lines
+            # put the current model, params and lines into global variables that will be shared with child processes.
+            shared_model = model
+            shared_params = self.params
+            shared_lines = self.data.lines
 
-            for seg in counts_i:
-                Pseg[seg] += counts_i[seg]      # accumulate the expected counts
+            # each process is responsible for lines[n] for n % N_processes = i
+            pool = mp.Pool(N_processes)
+            results = pool.map(parallel_forward_backwards, [(N_processes, i) for i in xrange(N_processes)])
+            pool.close()
+
+            # sum the results.
+            for logprob_i, counts_i in results:
+                LL += logprob_i
+                for seg in counts_i:
+                    Pseg[seg] += counts_i[seg]      # accumulate the expected counts
+
+        else:
+            for i, line in enumerate(self.data.lines):       # go over each sentence and collect expected counts
+                logprob_i, counts_i = MonotoneFSTUtil.forward_backward(model, self.params, line)
+                LL += logprob_i
+
+                for seg in counts_i:
+                    Pseg[seg] += counts_i[seg]      # accumulate the expected counts
 
         ec = Model(Pseg)
         return LL, ec

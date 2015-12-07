@@ -21,7 +21,6 @@ if __name__ == '__main__':
 
     for beta in [1.2, 1.3, 1.4]:
         opts.beta = beta
-        opts.asd = 123
         segmenter = Segmenter.Segmenter(opts)
         segmenter.loadData(opts.train, opts.dev, remove_whitespace=True)
         model = segmenter.train()
